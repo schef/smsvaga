@@ -27,13 +27,13 @@ static void ledBlink() {
 void setup() {
     loggif("start\n");
     AppTimer::getInstance();
-    Modem::getInstance();
-    Vaga::getInstance();
+    Modem::getInstance().init();
+//    Vaga::getInstance();
 
     AppTimer::getInstance().registerCallback(keepAliveMessage, 5000, "keepAlive");
     AppTimer::getInstance().registerCallback(ledBlink, 500, "ledBlink");
     AppTimer::getInstance().registerCallback(Modem::staticTimerCallback, 100, "modem", 5000);
-    AppTimer::getInstance().registerCallback(Vaga::staticTimerCallback, 10000, "vaga", 10000);
+//    AppTimer::getInstance().registerCallback(Vaga::staticTimerCallback, 10000, "vaga", 10000);
     loggif("end\n");
 }
 

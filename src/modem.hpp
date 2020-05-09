@@ -12,6 +12,8 @@ private:
 
     Modem() {
         loggif("\n");
+        pinMode(17, OUTPUT);
+        digitalWrite(17, 1);
     }
 
 public:
@@ -22,43 +24,91 @@ public:
     }
 
     void init() {
-        Serial1.begin(115200);
+        Serial1.begin(9600);
+    }
+
+    void setPower(bool state) {
+        loggif("state[%d]\n", state);
+        digitalWrite(17, !state);
     }
 
     void timerCallback() {
+        static bool firstTime = true;
+        if (firstTime) {
+            firstTime = false;
+            setPower(1);
+        }
+
         read();
 
         static uint64_t writeTimestamp = AppTimer::getInstance().getMillis();
         if (AppTimer::getInstance().millisPassed(writeTimestamp) > 5000) {
             writeTimestamp = AppTimer::getInstance().getMillis();
-            write();
+            static uint8_t state = 0;
+            switch (state) {
+                case 0:
+                    write("AT");
+                    break;
+                case 1:
+                    write("AT+CSQ");
+                    break;
+                case 2:
+                    write("at+cpin?");
+                    break;
+//                case 3:
+//                    write("AT+CCID");
+//                    break;
+//                case 4:
+//                    write("AT+CREG?");
+//                    break;
+//                case 5:
+//                    write("AT+CMGF=1");
+//                    break;
+//                case 6:
+//                    write("AT+CMGS=\"+385912895203\"");
+//                    break;
+//                case 7:
+//                    write("DELA!");
+//                    break;
+//                case 8:
+//                    write(0x1A);
+//                    break;
+                default:
+                    break;
+            }
+            state++;
         }
     }
 
     void read() {
-        read(NULL);
-    }
-
-    uint32_t read(uint8_t *buffer) {
-        if (Serial1.available() > 0) {
+        while (Serial1.available()) {
             rxBuffer[rxBufferLen] = Serial1.read();
-        }
-        uint32_t len = 0;
-        if (rxBufferLen) {
-            loggif("");
-            loggbln(rxBuffer, rxBufferLen, '\0');
-            if (buffer != NULL) {
-                memcpy(rxBuffer, buffer, rxBufferLen);
-                len = rxBufferLen;
+            rxBufferLen++;
+            if (rxBuffer[rxBufferLen - 2] == 0x0D && rxBuffer[rxBufferLen - 1] == 0x0A) {
+                for (uint32_t i = 0; i < rxBufferLen; i++) {
+                    uint8_t &c = rxBuffer[i];
+                    if (c == 0x0D || c == 0x0A) {
+                        c = 0;
+                    }
+                }
+                if (rxBuffer[0] != 0) {
+                    onRead((const char *) rxBuffer);
+                }
+                rxBufferLen = 0;
             }
-            rxBufferLen = 0;
         }
-        return len;
     }
 
-    void write() {
-        loggif("\n");
-        Serial1.print("\r\nAT\r\n");
+    void onRead(const char *message) {
+        loggif("%s\n", message);
+    }
+
+    void write(const char *message) {
+        Serial1.println(message);
+    }
+
+    void write(uint8_t hex) {
+        Serial1.write(hex);
     }
 
     static void staticTimerCallback() {
