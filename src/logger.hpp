@@ -18,7 +18,7 @@ static inline void LoggerPrintf(const char *format, ...) {
     static bool init = false;
     if (!init) {
         init = true;
-        Serial.begin(9600);
+        Serial.begin(115200);
     }
 
     char buf[128]; // resulting string limited to 128 chars

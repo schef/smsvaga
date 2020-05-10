@@ -4,6 +4,8 @@
 #include "app_timer.hpp"
 #include "modem.hpp"
 #include "vaga.hpp"
+#include "console.hpp"
+#include "console_test.hpp"
 
 static void keepAliveMessage() {
     static uint32_t powerManagerCounter = 0;
@@ -27,12 +29,15 @@ static void ledBlink() {
 void setup() {
     loggif("start\n");
     AppTimer::getInstance();
-    Modem::getInstance().init();
+    Console::getInstance();
+    ConsoleTest::registerCommands();
+    Modem::getInstance();
 //    Vaga::getInstance();
 
     AppTimer::getInstance().registerCallback(keepAliveMessage, 5000, "keepAlive");
     AppTimer::getInstance().registerCallback(ledBlink, 500, "ledBlink");
-    AppTimer::getInstance().registerCallback(Modem::staticTimerCallback, 100, "modem", 5000);
+    AppTimer::getInstance().registerCallback(Console::receiveSerial, 10, "console");
+    AppTimer::getInstance().registerCallback(Modem::receiveSerial, 10, "modem");
 //    AppTimer::getInstance().registerCallback(Vaga::staticTimerCallback, 10000, "vaga", 10000);
     loggif("end\n");
 }

@@ -14,6 +14,11 @@ private:
         loggif("\n");
         pinMode(17, OUTPUT);
         digitalWrite(17, 1);
+        init();
+    }
+
+    void init() {
+        Serial1.begin(9600);
     }
 
 public:
@@ -23,61 +28,9 @@ public:
         return instance;
     }
 
-    void init() {
-        Serial1.begin(9600);
-    }
-
     void setPower(bool state) {
         loggif("state[%d]\n", state);
         digitalWrite(17, !state);
-    }
-
-    void timerCallback() {
-        static bool firstTime = true;
-        if (firstTime) {
-            firstTime = false;
-            setPower(1);
-        }
-
-        read();
-
-        static uint64_t writeTimestamp = AppTimer::getInstance().getMillis();
-        if (AppTimer::getInstance().millisPassed(writeTimestamp) > 5000) {
-            writeTimestamp = AppTimer::getInstance().getMillis();
-            static uint8_t state = 0;
-            switch (state) {
-                case 0:
-                    write("AT");
-                    break;
-                case 1:
-                    write("AT+CSQ");
-                    break;
-                case 2:
-                    write("at+cpin?");
-                    break;
-//                case 3:
-//                    write("AT+CCID");
-//                    break;
-//                case 4:
-//                    write("AT+CREG?");
-//                    break;
-//                case 5:
-//                    write("AT+CMGF=1");
-//                    break;
-//                case 6:
-//                    write("AT+CMGS=\"+385912895203\"");
-//                    break;
-//                case 7:
-//                    write("DELA!");
-//                    break;
-//                case 8:
-//                    write(0x1A);
-//                    break;
-                default:
-                    break;
-            }
-            state++;
-        }
     }
 
     void read() {
@@ -111,8 +64,8 @@ public:
         Serial1.write(hex);
     }
 
-    static void staticTimerCallback() {
-        getInstance().timerCallback();
+    static void receiveSerial() {
+        getInstance().read();
     }
 };
 
