@@ -21,6 +21,26 @@ class ConsoleTest {
                 loggbln(buffer, bufferLen, ' ');
                 delete[] buffer;
 
+            } else if (!strcmp(argv[1], "64")) {
+                uint64_t malijedan = 1;
+                uint64_t malidva = 2;
+                uint64_t velikijedan = 0xffffffffffffffff - 1;
+                uint64_t velikidva = 0xffffffffffffffff - 2;
+                loggbln((uint8_t*)&malijedan, sizeof(uint64_t), '\0');
+                loggbln((uint8_t*)&malidva, sizeof(uint64_t), '\0');
+                loggbln((uint8_t*)&velikijedan, sizeof(uint64_t), '\0');
+                loggbln((uint8_t*)&velikidva, sizeof(uint64_t), '\0');
+                uint64_t sumamali = malijedan + malidva;
+                uint64_t razlikamali = malidva - malijedan;
+                uint64_t sumaveliki = 0xffffffffffffffff + 1;
+                uint64_t razlikaveliki = 0xffffffffffffffff + 2;
+                loggifl("\n");
+                loggbln((uint8_t*)&sumamali, sizeof(uint64_t), '\0');
+                loggbln((uint8_t*)&razlikamali, sizeof(uint64_t), '\0');
+                loggbln((uint8_t*)&sumaveliki, sizeof(uint64_t), '\0');
+                loggbln((uint8_t*)&razlikaveliki, sizeof(uint64_t), '\0');
+
+
             } else {
                 Console::printError(argc, argv);
             }

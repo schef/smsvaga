@@ -26,31 +26,11 @@ static void ledBlink() {
     state = !state;
 }
 
-void onSms(bool status);
-
-void sendSms() {
-    loggif("\n");
-    char message[128];
-    sprintf(message, "DELA %llu", (uint32_t)AppTimer::getInstance().getMillis());
-    Modem::getInstance().sendSms("+385912895203", message, onSms);
-}
-
-void onSms(bool status) {
-    loggif("%s\n", status ? "true" : "false");
-    static uint32_t retry = 0;
-    if (!status && retry < 2) {
-        retry++;
-        sendSms();
-    } else {
-        retry = 0;
-    }
-}
-
-void smsTimer() {
+void testTimer() {
     static uint64_t timestamp = AppTimer::getInstance().getMillis();
-    if (AppTimer::getInstance().millisPassed(timestamp) >= 2 * 60 * 60 * 1000) {
+    if (AppTimer::getInstance().millisPassed(timestamp) >= 2 * 60 * 60 * 1000L) {
         timestamp = AppTimer::getInstance().getMillis();
-        sendSms();
+        loggif("\n");
     }
 }
 
@@ -63,11 +43,11 @@ void setup() {
     Modem::getInstance();
 //    Vaga::getInstance();
 
-    AppTimer::getInstance().registerCallback("keepAliveMessage", 5000, keepAliveMessage);
+    AppTimer::getInstance().registerCallback("keepAliveMessage", 60000L, keepAliveMessage);
     AppTimer::getInstance().registerCallback("ledBlink", 500, ledBlink);
     AppTimer::getInstance().registerCallback("Console::receiveSerial", 10, Console::receiveSerial);
     AppTimer::getInstance().registerCallback("Modem::receiveSerial", 10, Modem::staticTimerCallback);
-    AppTimer::getInstance().registerCallback("smsTimer", 1000, smsTimer);
+    AppTimer::getInstance().registerCallback("testTimer", 1000, testTimer);
 //    AppTimer::getInstance().registerCallback("Vaga::staticTimerCallback", 10000, Vaga::staticTimerCallback, 10000);
     loggif("end\n");
 }
