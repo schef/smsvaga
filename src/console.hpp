@@ -203,7 +203,7 @@ public:
         loggf("\n");
     }
 
-    static uint32_t getNum(char *str) {
+    static long getNum(char *str) {
         return atoi(str);
     }
 

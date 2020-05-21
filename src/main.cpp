@@ -41,14 +41,14 @@ void setup() {
     Console::getInstance();
     ConsoleTest::registerCommands();
     Modem::getInstance();
-//    Vaga::getInstance();
+    Vaga::getInstance();
 
     AppTimer::getInstance().registerCallback("keepAliveMessage", 60000L, keepAliveMessage);
     AppTimer::getInstance().registerCallback("ledBlink", 500, ledBlink);
     AppTimer::getInstance().registerCallback("Console::receiveSerial", 10, Console::receiveSerial);
     AppTimer::getInstance().registerCallback("Modem::receiveSerial", 10, Modem::staticTimerCallback);
     AppTimer::getInstance().registerCallback("testTimer", 1000, testTimer);
-//    AppTimer::getInstance().registerCallback("Vaga::staticTimerCallback", 10000, Vaga::staticTimerCallback, 10000);
+    AppTimer::getInstance().registerCallback("Vaga::staticTimerCallback", 10000, Vaga::staticTimerCallback, 10000);
     loggif("end\n");
 }
 

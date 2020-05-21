@@ -26,19 +26,19 @@ class ConsoleTest {
                 uint64_t malidva = 2;
                 uint64_t velikijedan = 0xffffffffffffffff - 1;
                 uint64_t velikidva = 0xffffffffffffffff - 2;
-                loggbln((uint8_t*)&malijedan, sizeof(uint64_t), '\0');
-                loggbln((uint8_t*)&malidva, sizeof(uint64_t), '\0');
-                loggbln((uint8_t*)&velikijedan, sizeof(uint64_t), '\0');
-                loggbln((uint8_t*)&velikidva, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &malijedan, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &malidva, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &velikijedan, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &velikidva, sizeof(uint64_t), '\0');
                 uint64_t sumamali = malijedan + malidva;
                 uint64_t razlikamali = malidva - malijedan;
                 uint64_t sumaveliki = 0xffffffffffffffff + 1;
                 uint64_t razlikaveliki = 0xffffffffffffffff + 2;
                 loggifl("\n");
-                loggbln((uint8_t*)&sumamali, sizeof(uint64_t), '\0');
-                loggbln((uint8_t*)&razlikamali, sizeof(uint64_t), '\0');
-                loggbln((uint8_t*)&sumaveliki, sizeof(uint64_t), '\0');
-                loggbln((uint8_t*)&razlikaveliki, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &sumamali, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &razlikamali, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &sumaveliki, sizeof(uint64_t), '\0');
+                loggbln((uint8_t *) &razlikaveliki, sizeof(uint64_t), '\0');
 
 
             } else {
@@ -94,13 +94,43 @@ class ConsoleTest {
         }
     }
 
+    static void vaga(int argc, char *argv[]) {
+        if (argc == 2) {
+            if (!strcmp(argv[1], "cali")) {
+                Vaga::getInstance().calibrate();
+
+            } else if (!strcmp(argv[1], "tare")) {
+                Vaga::getInstance().tare();
+
+            } else if (!strcmp(argv[1], "read")) {
+                Vaga::getInstance().read();
+
+            } else if (!strcmp(argv[1], "reada")) {
+                Vaga::getInstance().readAverage();
+
+            } else {
+                Console::printError(argc, argv);
+            }
+
+        } else if (argc == 3) {
+            if (!strcmp(argv[1], "cali")) {
+                Vaga::getInstance().calibrate(Console::getNum(argv[2]));
+
+            } else {
+                Console::printError(argc, argv);
+
+            }
+        } else {
+            Console::printError(argc, argv);
+        }
+    }
+
 public:
     static void registerCommands() {
         loggif("\n");
-        Console::getInstance().registerCommand(
-                Console::cmd_list_t{"test", "<str|int|hex> <DATA>", "Conversion examples", test});
-        Console::getInstance().registerCommand(
-                Console::cmd_list_t{"modem", "<power|write> <DATA>", "Conversion examples", modem});
+        Console::getInstance().registerCommand(Console::cmd_list_t{"test", "<str|int|hex> <DATA>", "", test});
+        Console::getInstance().registerCommand(Console::cmd_list_t{"modem", "<power|write> <DATA>", "", modem});
+        Console::getInstance().registerCommand(Console::cmd_list_t{"vaga", "", "", vaga});
     }
 };
 

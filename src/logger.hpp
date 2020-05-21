@@ -63,4 +63,32 @@ static inline void LoggerPrintBytes(const void *object, size_t size, char separa
     }
 }
 
+static inline char *f2str(float num, uint32_t bufferNum = 0, uint32_t decimalPlaces = 3)
+{
+#define FLOAT_BUFFER_SIZE 16
+    auto numLeft = (long)num;
+    auto numRight = (long)abs((num * (long)pow(10L, decimalPlaces))) - (long)abs((numLeft * (long)pow(10L, decimalPlaces)));
+    if (numRight < 0) {
+        numRight *= -1L;
+    }
+    char *buffer = NULL;
+    switch (bufferNum)
+    {
+        case 0:
+            static char buffer0[FLOAT_BUFFER_SIZE];
+            buffer = buffer0;
+            break;
+        case 1:
+            static char buffer1[FLOAT_BUFFER_SIZE];
+            buffer = buffer1;
+            break;
+        case 2:
+            static char buffer2[FLOAT_BUFFER_SIZE];
+            buffer = buffer2;
+            break;
+    }
+    snprintf(buffer, FLOAT_BUFFER_SIZE, "%ld.%ld", numLeft, numRight);
+    return buffer;
+}
+
 #endif //__LOGGER_HPP__
