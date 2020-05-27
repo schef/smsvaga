@@ -71,16 +71,80 @@ public:
 
     void autoCali() {
         long rawValue = readMedian();
-        m = 0.0F;
+        m = 1000;
         auto unit = getUnit(rawValue);
-        loggif("raw[%ld], unit[%ld]\n", rawValue, unit);
-        if (unit < 0) {
-            loggif("start from -\n");
-        } else if (unit > 0) {
-            loggif("start from +\n");
-        } else {
-            loggif("start from 0\n");
+        auto lastUnit = unit;
+        long step = 1;
+        long operations = 0;
+        while (unit != y && operations < 1000) {
+            loggif("raw[%ld], unit[%ld], m[%ld], step[%ld]\n", rawValue, unit, m, step);
+            if (unit < y) {
+                loggif("start from -\n");
+                m += step;
+                unit = getUnit(rawValue);
+                if (unit < lastUnit) { // away from zero
+                    loggif("continue with --\n");
+                    if (step > 0) {
+                        step *= -1;
+                    }
+                } else if (unit > lastUnit) { // closer to zero
+                    loggif("continue\n");
+                } else if (unit == lastUnit && unit != y) { //to small step
+                    loggif("to small step\n");
+                    if (step < 0) {
+                        step -= 1;
+                    } else {
+                        step += 1;
+                    }
+                } else { // already zero
+                    loggif("its 0\n");
+                    break;
+                }
+            } else if (unit > y) {
+                loggif("start from +\n");
+                m += 1;
+                unit = getUnit(rawValue);
+                if (unit < lastUnit) { // closer to zero
+                    loggif("continue\n");
+                } else if (unit > lastUnit) { // away from zero
+                    loggif("continue with ++\n");
+                    if (step < 0) {
+                        step *= -1;
+                    }
+                } else if (unit == lastUnit && unit != y) { //to small step
+                    loggif("to small step\n");
+                    if (step < 0) {
+                        step -= 1;
+                    } else {
+                        step += 1;
+                    }
+                } else { // already zero
+                    loggif("its from 0\n");
+                    break;
+                }
+            } else {
+                loggif("its from 0\n");
+                break;
+            }
+            if (lastUnit > y && unit < y) {
+                loggif("step to big\n");
+                if (step < 0) {
+                    step += 1;
+                } else {
+                    step -= 1;
+                }
+            } else if (lastUnit < y && unit > y) {
+                loggif("step to big\n");
+                if (step < 0) {
+                    step += 1;
+                } else {
+                    step -= 1;
+                }
+            }
+            lastUnit = unit;
+            operations++;
         }
+        loggif("raw[%ld], unit[%ld], m[%ld]\n", rawValue, unit, m);
     }
 
     void timerCallback() {
