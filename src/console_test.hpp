@@ -97,16 +97,22 @@ class ConsoleTest {
     static void vaga(int argc, char *argv[]) {
         if (argc == 2) {
             if (!strcmp(argv[1], "cali")) {
-                Vaga::getInstance().calibrate();
+//                Vaga::getInstance().calibrate();
 
-            } else if (!strcmp(argv[1], "tare")) {
-                Vaga::getInstance().tare();
+            } else if (!strcmp(argv[1], "auto")) {
+                Vaga::getInstance().autoCali();
 
             } else if (!strcmp(argv[1], "read")) {
                 Vaga::getInstance().read();
 
-            } else if (!strcmp(argv[1], "reada")) {
-                Vaga::getInstance().readAverage();
+            } else if (!strcmp(argv[1], "x")) {
+                Vaga::getInstance().getX();
+
+            } else if (!strcmp(argv[1], "b")) {
+                Vaga::getInstance().getB();
+
+            } else if (!strcmp(argv[1], "m")) {
+                Vaga::getInstance().calcM();
 
             } else {
                 Console::printError(argc, argv);
@@ -114,7 +120,7 @@ class ConsoleTest {
 
         } else if (argc == 3) {
             if (!strcmp(argv[1], "cali")) {
-                Vaga::getInstance().calibrate(Console::getNum(argv[2]));
+//                Vaga::getInstance().calibrate(Console::getNum(argv[2]));
 
             } else {
                 Console::printError(argc, argv);
