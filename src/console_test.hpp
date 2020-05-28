@@ -105,8 +105,8 @@ class ConsoleTest {
             } else if (!strcmp(argv[1], "read")) {
                 Vaga::getInstance().read();
 
-            } else if (!strcmp(argv[1], "x")) {
-                Vaga::getInstance().getX();
+            } else if (!strcmp(argv[1], "y")) {
+                Vaga::getInstance().getY();
 
             } else if (!strcmp(argv[1], "b")) {
                 Vaga::getInstance().getB();

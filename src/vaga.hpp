@@ -17,10 +17,10 @@
 class Vaga {
 private:
     HX711 scale;
-    long y = 1000; // (vaga s teretom u mjernoj jedinici)
-    long b = 569712; // (raw prazne vage) 569712
-    long x = 598408; // (raw vage s teretom) 598408
-    long m = 0; // (formula)
+    long x = 1227; // (vaga s teretom u mjernoj jedinici)
+    long b = 569947; // (raw prazne vage) 569712
+    long y = 598612; // (raw vage s teretom) 598408
+    float m = 23.3618F; // (formula)
 
     Vaga() {
         loggif("\n");
@@ -46,13 +46,13 @@ public:
 
     float read() {
         auto reading = (readMedian() - b) / m;
-        loggif("[%ld]g\n", reading);
+        loggif("[%s]g\n", f2str(reading));
         return reading;
     }
 
-    void getX() {
-        x = readMedian();
-        loggif("[%ld]\n", x);
+    void getY() {
+        y = readMedian();
+        loggif("[%ld]\n", y);
     }
 
     void getB() {
@@ -61,90 +61,11 @@ public:
     }
 
     void calcM() {
-        m = (y - b) / x;
-        loggif("[%ld]\n", m);
-    }
-
-    long getUnit(long raw) {
-        return (raw - b) / m;
+        m = (float)(y - b) / (float)x;
+        loggif("[%s]\n", f2str(m));
     }
 
     void autoCali() {
-        long rawValue = readMedian();
-        m = 1000;
-        auto unit = getUnit(rawValue);
-        auto lastUnit = unit;
-        long step = 1;
-        long operations = 0;
-        while (unit != y && operations < 1000) {
-            loggif("raw[%ld], unit[%ld], m[%ld], step[%ld]\n", rawValue, unit, m, step);
-            if (unit < y) {
-                loggif("start from -\n");
-                m += step;
-                unit = getUnit(rawValue);
-                if (unit < lastUnit) { // away from zero
-                    loggif("continue with --\n");
-                    if (step > 0) {
-                        step *= -1;
-                    }
-                } else if (unit > lastUnit) { // closer to zero
-                    loggif("continue\n");
-                } else if (unit == lastUnit && unit != y) { //to small step
-                    loggif("to small step\n");
-                    if (step < 0) {
-                        step -= 1;
-                    } else {
-                        step += 1;
-                    }
-                } else { // already zero
-                    loggif("its 0\n");
-                    break;
-                }
-            } else if (unit > y) {
-                loggif("start from +\n");
-                m += 1;
-                unit = getUnit(rawValue);
-                if (unit < lastUnit) { // closer to zero
-                    loggif("continue\n");
-                } else if (unit > lastUnit) { // away from zero
-                    loggif("continue with ++\n");
-                    if (step < 0) {
-                        step *= -1;
-                    }
-                } else if (unit == lastUnit && unit != y) { //to small step
-                    loggif("to small step\n");
-                    if (step < 0) {
-                        step -= 1;
-                    } else {
-                        step += 1;
-                    }
-                } else { // already zero
-                    loggif("its from 0\n");
-                    break;
-                }
-            } else {
-                loggif("its from 0\n");
-                break;
-            }
-            if (lastUnit > y && unit < y) {
-                loggif("step to big\n");
-                if (step < 0) {
-                    step += 1;
-                } else {
-                    step -= 1;
-                }
-            } else if (lastUnit < y && unit > y) {
-                loggif("step to big\n");
-                if (step < 0) {
-                    step += 1;
-                } else {
-                    step -= 1;
-                }
-            }
-            lastUnit = unit;
-            operations++;
-        }
-        loggif("raw[%ld], unit[%ld], m[%ld]\n", rawValue, unit, m);
     }
 
     void timerCallback() {
