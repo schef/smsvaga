@@ -56,7 +56,7 @@ class ConsoleTest {
     static void modem(int argc, char *argv[]) {
         if (argc == 2) {
             if (!strcmp(argv[1], "sms")) {
-                Modem::getInstance().sendSms("+385912895204", "DELA!!!", onSms);
+                Modem::getInstance().sendSms("+385993047531", "DELA!!!", onSms);
 
             } else {
                 Console::printError(argc, argv);
