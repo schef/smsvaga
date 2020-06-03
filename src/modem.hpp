@@ -13,19 +13,29 @@ private:
         START,
         POWER_ON,
         AT,
+        AT_TIMEOUT,
         CONFIGURE_TEXT_MODE,
+        CONFIGURE_TEXT_MODE_TIMEOUT,
         SMS_BEGIN,
         SMS_TEXT,
         SMS_END,
+        SMS_END_TIMEOUT,
         POWER_OFF,
         END_SUCCESS,
-        END_FAILED
+        END_FAILED,
+        NO_TIMEOUT
     } ModemState;
 
     uint8_t rxBuffer[256];
     uint32_t rxBufferLen = 0;
     ModemState modemState = IDLE;
+    ModemState modemNextState = IDLE;
+    ModemState modemTimeoutState = IDLE;
+    const char *expectText = NULL;
+    bool validateTimeout = false;
+
     void (*onSmsSentCb)(bool status) = NULL;
+
     const char *smsNumber = NULL;
     const char *smsMessage = NULL;
     uint64_t stateMachineTimestamp = 0;
@@ -51,11 +61,15 @@ public:
 
     void setPower(bool state) {
         loggif("state[%d]\n", state);
-        digitalWrite(17, !state);
+        if (state) {
+            digitalWrite(17, !state);
+        } else {
+            loggif("ignore power off couse off fw reset, low voltage?\n");
+        }
     }
 
     void read() {
-        while (Serial1.available()) {
+        if (Serial1.available()) {
             rxBuffer[rxBufferLen] = Serial1.read();
             rxBufferLen++;
             if (rxBuffer[rxBufferLen - 2] == 0x0D && rxBuffer[rxBufferLen - 1] == 0x0A) {
@@ -75,11 +89,13 @@ public:
 
     void onRead(const char *message) {
         loggif("%s\n", message);
-        stateMachine(true, (uint8_t*)message, strlen(message));
+        if (!strncmp(expectText, (const char *) message, strlen(expectText))) {
+            stateMachine((uint8_t *) message, strlen(message), false);
+        }
     }
 
     void write(const char *message, bool newLine = true) {
-        while(!Serial1.availableForWrite());
+        while (!Serial1.availableForWrite());
         Serial1.write(message);
         if (newLine) {
             Serial1.write("\n");
@@ -87,22 +103,29 @@ public:
     }
 
     void write(uint8_t num, bool newLine = true) {
-        while(!Serial1.availableForWrite());
+        while (!Serial1.availableForWrite());
         Serial1.write(num);
         if (newLine) {
             Serial1.write("\n");
         }
     }
 
-    static void staticTimerCallback() {
-        getInstance().timerCallback();
+    static void staticReceiveSerial() {
+        getInstance().receiveSerial();
     }
 
-    void timerCallback() {
+    void receiveSerial() {
         read();
-        if (stateMachineTimeout && AppTimer::getInstance().millisPassed(stateMachineTimestamp) >= stateMachineTimeout) {
+    }
+
+    static void staticStateMachineTimeoutHandler() {
+        getInstance().stateMachineTimeoutHandler();
+    }
+
+    void stateMachineTimeoutHandler() {
+        if (stateMachineTimeout && stateMachineTimestamp && AppTimer::getInstance().millisPassed(stateMachineTimestamp) >= stateMachineTimeout) {
             stateMachineTimeout = 0;
-            stateMachine(false, NULL, 0);
+            stateMachine(NULL, 0, true);
         }
     }
 
@@ -114,120 +137,119 @@ public:
     }
 
     void endState() {
-        nextState(IDLE);
+        modemNextState = IDLE;
+        modemTimeoutState = IDLE;
+        stateMachineTimestamp = 0;
+        stateMachineTimeout = 0;
     }
 
-    void nextState(ModemState state, uint64_t timeout = 0) {
+    const char *getStateName(ModemState state) {
         switch (state) {
             case IDLE:
-                loggif("IDLE");
-                break;
+                return ("IDLE");
             case START:
-                loggif("START");
-                break;
+                return ("START");
             case POWER_ON:
-                loggif("POWER_ON");
-                break;
+                return ("POWER_ON");
             case AT:
-                loggif("AT");
-                break;
+                return ("AT");
+            case AT_TIMEOUT:
+                return ("AT_TIMEOUT");
             case CONFIGURE_TEXT_MODE:
-                loggif("CONFIGURE_TEXT_MODE");
-                break;
+                return ("CONFIGURE_TEXT_MODE");
+            case CONFIGURE_TEXT_MODE_TIMEOUT:
+                return ("CONFIGURE_TEXT_MODE_TIMEOUT");
             case SMS_BEGIN:
-                loggif("SMS_BEGIN");
-                break;
+                return ("SMS_BEGIN");
             case SMS_TEXT:
-                loggif("SMS_TEXT");
-                break;
+                return ("SMS_TEXT");
             case SMS_END:
-                loggif("SMS_END");
-                break;
+                return ("SMS_END");
+            case SMS_END_TIMEOUT:
+                return ("SMS_END_TIMEOUT");
             case POWER_OFF:
-                loggif("POWER_OFF");
-                break;
+                return ("POWER_OFF");
             case END_SUCCESS:
-                loggif("END_SUCCESS");
-                break;
+                return ("END_SUCCESS");
             case END_FAILED:
-                loggif("END_FAILED");
-                break;
+                return ("END_FAILED");
+            case NO_TIMEOUT:
+                return ("NO_TIMEOUT");
+            default:
+                return ("N/A");
         }
-        loggf(" in %d ms\n", (uint32_t)timeout);
-        modemState = state;
-        stateMachineTimestamp = AppTimer::getInstance().getMillis();
-        stateMachineTimeout = timeout;
     }
 
-    void stateMachine(bool status, uint8_t *buffer, uint32_t len) {
+    void nextState(ModemState state, uint64_t timeout = 0, ModemState timeoutState = NO_TIMEOUT, const char *expect = NULL) {
+        modemNextState = state;
+        modemTimeoutState = timeoutState;
+        stateMachineTimestamp = AppTimer::getInstance().getMillis();
+        stateMachineTimeout = timeout;
+        expectText = expect;
+        printState();
+    }
+
+    void stateMachine(uint8_t *buffer, uint32_t len, bool timeout = false) {
+        if (timeout && modemTimeoutState != NO_TIMEOUT) {
+            modemState = modemTimeoutState;
+        } else {
+            modemState = modemNextState;
+        }
+
+        loggif("%s\n", getStateName(modemState));
+
         switch (modemState) {
             case IDLE:
                 return;
+            case NO_TIMEOUT:
+                return;
             case START:
-                loggif("START\n");
                 nextState(POWER_ON, 1000);
                 break;
             case POWER_ON:
-                loggif("POWER_ON\n");
                 setPower(1);
                 nextState(AT, 5000);
                 break;
             case AT:
-                loggif("AT\n");
                 write("AT");
-                nextState(CONFIGURE_TEXT_MODE, 1000);
+                nextState(CONFIGURE_TEXT_MODE, 1000, AT_TIMEOUT, "OK");
+                break;
+            case AT_TIMEOUT:
+                setPower(false);
+                nextState(END_FAILED, 1000);
                 break;
             case CONFIGURE_TEXT_MODE:
-                loggif("CONFIGURE_TEXT_MODE\n");
-                if (status) {
-                    if (!strcmp("OK", (const char*)buffer)) {
-                        write("AT+CMGF=1");
-                        nextState(SMS_BEGIN, 20000);
-                    }
-                } else {
-                    loggif("TIMEOUT\n");
-                    nextState(POWER_OFF);
-                }
+                write("AT+CMGF=1");
+//                nextState(SMS_BEGIN, 20000, CONFIGURE_TEXT_MODE, "SMS Ready");
+                nextState(SMS_BEGIN, 20000, CONFIGURE_TEXT_MODE, "OK");
+                break;
+            case CONFIGURE_TEXT_MODE_TIMEOUT:
+                setPower(false);
+                nextState(END_FAILED, 1000);
                 break;
             case SMS_BEGIN:
-                loggif("SMS_BEGIN\n");
-                if (status) {
-                    if (!strcmp("SMS Ready", (const char*)buffer)) {
-                        write("AT+CMGS=\"", false);
-                        write(smsNumber, false);
-                        write("\"");
-                        nextState(SMS_TEXT, 1000);
-                    }
-                } else {
-                    loggif("TIMEOUT\n");
-                    nextState(POWER_OFF);
-                }
+                write("AT+CMGS=\"", false);
+                write(smsNumber, false);
+                write("\"");
+                nextState(SMS_TEXT, 1000);
                 break;
             case SMS_TEXT:
-                loggif("SMS_TEXT\n");
-                Modem::getInstance().write(smsMessage, false);
+                write(smsMessage, false);
                 nextState(SMS_END, 1000);
                 break;
             case SMS_END:
-                loggif("SMS_END\n");
-                Modem::getInstance().write(26, false);
-                nextState(POWER_OFF, 120000);
+                write(26, false);
+                nextState(POWER_OFF, 120000, SMS_END_TIMEOUT, "+CMGS");
+                break;
+            case SMS_END_TIMEOUT:
+                setPower(false);
+                nextState(END_FAILED, 1000);
                 break;
             case POWER_OFF:
-                loggif("POWER_OFF\n");
-                if (status) {
-                    if (!strncmp("+CMGS", (const char*)buffer, 5)) {
-                        setPower(false);
-                        nextState(END_SUCCESS, 2000);
-                    }
-                } else {
-                    loggif("TIMEOUT\n");
-                    setPower(false);
-                    nextState(END_FAILED, 1000);
-                }
+                setPower(false);
+                nextState(END_SUCCESS, 2000);
                 break;
             case END_SUCCESS:
-                loggif("END_SUCCESS\n");
                 if (onSmsSentCb) {
                     onSmsSentCb(true);
                     onSmsSentCb = NULL;
@@ -235,7 +257,6 @@ public:
                 endState();
                 break;
             case END_FAILED:
-                loggif("END_FAILED\n");
                 if (onSmsSentCb) {
                     onSmsSentCb(false);
                     onSmsSentCb = NULL;
@@ -243,6 +264,10 @@ public:
                 endState();
                 break;
         }
+    }
+
+    void printState() {
+        loggif("%s -> %s timeout %s in %lu ms, millisPassed %lu ms\n", getStateName(modemState), getStateName(modemNextState), getStateName(modemTimeoutState), (uint32_t) stateMachineTimeout, (uint32_t) (AppTimer::getInstance().millisPassed(stateMachineTimestamp)));
     }
 };
 

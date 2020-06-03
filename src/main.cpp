@@ -26,11 +26,47 @@ static void ledBlink() {
     state = !state;
 }
 
+#define TELEFON "+385912895203"
+static uint32_t retryCount = 0;
+static const uint32_t retryCountMax = 3;
+
+void onSms(bool status);
+
+void sendSms() {
+    static char buffer[256];
+    snprintf(buffer, sizeof(buffer), "Stanje vage %sg\n", f2str(Vaga::getInstance().read()));
+    Modem::getInstance().sendSms(TELEFON, buffer, onSms);
+}
+
+void onSms(bool status) {
+    if (!status) {
+        if (retryCount < retryCountMax) {
+            retryCount++;
+            sendSms();
+        } else {
+            loggif("Send failed\n");
+            retryCount = 0;
+        }
+    } else {
+        loggif("Send successful\n");
+        retryCount = 0;
+    }
+}
+
 void testTimer() {
     static uint64_t timestamp = AppTimer::getInstance().getMillis();
-    if (AppTimer::getInstance().millisPassed(timestamp) >= 2 * 60 * 60 * 1000L) {
+    static bool firstTime = true;
+    if (firstTime && AppTimer::getInstance().millisPassed(timestamp) >= 10 * 60 * 1000L) {
+        loggif("first time\n");
+        firstTime = false;
         timestamp = AppTimer::getInstance().getMillis();
-        loggif("\n");
+        sendSms();
+
+    } else if (AppTimer::getInstance().millisPassed(timestamp) >= 24 * 60 * 60 * 1000L) {
+        loggif("next time\n");
+        timestamp = AppTimer::getInstance().getMillis();
+        sendSms();
+
     }
 }
 
@@ -43,10 +79,13 @@ void setup() {
     Modem::getInstance();
     Vaga::getInstance();
 
+    Modem::getInstance().setPower(1);
+
     AppTimer::getInstance().registerCallback("keepAliveMessage", 60000L, keepAliveMessage);
     AppTimer::getInstance().registerCallback("ledBlink", 500, ledBlink);
     AppTimer::getInstance().registerCallback("Console::receiveSerial", 10, Console::receiveSerial);
-    AppTimer::getInstance().registerCallback("Modem::receiveSerial", 10, Modem::staticTimerCallback);
+    AppTimer::getInstance().registerCallback("Modem::receiveSerial", 10, Modem::staticReceiveSerial);
+    AppTimer::getInstance().registerCallback("Modem::stateMachineTimeoutHandler", 500, Modem::staticStateMachineTimeoutHandler);
     AppTimer::getInstance().registerCallback("testTimer", 1000, testTimer);
     AppTimer::getInstance().registerCallback("Vaga::staticTimerCallback", 10000, Vaga::staticTimerCallback, 10000);
     loggif("end\n");
