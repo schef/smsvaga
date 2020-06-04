@@ -40,6 +40,12 @@ class ConsoleTest {
                 loggbln((uint8_t *) &sumaveliki, sizeof(uint64_t), '\0');
                 loggbln((uint8_t *) &razlikaveliki, sizeof(uint64_t), '\0');
 
+            } else if (!strcmp(argv[1], "timeout")) {
+                uint64_t numbers[] = {1000L, 60L * 1000L, 60L * 60L * 1000L, 24L * 60L * 60L * 1000L};
+                loggif("%lu\n", numbers[0]);
+                loggif("%lu\n", numbers[1]);
+                loggif("%lu\n", numbers[2]);
+                loggif("%lu\n", numbers[3]);
 
             } else {
                 Console::printError(argc, argv);

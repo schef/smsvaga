@@ -56,14 +56,18 @@ void onSms(bool status) {
 void testTimer() {
     static uint64_t timestamp = AppTimer::getInstance().getMillis();
     static bool firstTime = true;
-    if (firstTime && AppTimer::getInstance().millisPassed(timestamp) >= 10 * 60 * 1000L) {
+    static uint64_t timeoutFirst = 10L * 60L * 1000L;
+    static uint64_t timeoutNext = 24L * 60L * 60L * 1000L;
+    if (firstTime && AppTimer::getInstance().millisPassed(timestamp) >= timeoutFirst) {
         loggif("first time\n");
         firstTime = false;
+        loggif("%lu timestamp, millispassed %lu, timeout %lu\n", (uint32_t)AppTimer::getInstance().getMillis(), (uint32_t)AppTimer::getInstance().millisPassed(timestamp), (uint32_t)timeoutFirst);
         timestamp = AppTimer::getInstance().getMillis();
         sendSms();
 
-    } else if (AppTimer::getInstance().millisPassed(timestamp) >= 24 * 60 * 60 * 1000L) {
+    } else if (AppTimer::getInstance().millisPassed(timestamp) >= timeoutNext) {
         loggif("next time\n");
+        loggif("%lu timestamp, millispassed %lu, timeout %lu\n", (uint32_t)AppTimer::getInstance().getMillis(), (uint32_t)AppTimer::getInstance().millisPassed(timestamp), (uint32_t)timeoutNext);
         timestamp = AppTimer::getInstance().getMillis();
         sendSms();
 
