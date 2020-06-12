@@ -2,9 +2,8 @@
 #define __MODEM_HPP__
 
 #include "Arduino.h"
-#include <SoftwareSerial.h>
+#include "SoftwareSerial.h"
 #include "logger.hpp"
-#include "TinyGsmClientSIM800.h"
 
 class Modem {
 private:
@@ -214,7 +213,7 @@ public:
                 nextState(CONFIGURE_TEXT_MODE, 1000, AT_TIMEOUT, "OK");
                 break;
             case AT_TIMEOUT:
-                setPower(false);
+                setPower(0);
                 nextState(END_FAILED, 1000);
                 break;
             case CONFIGURE_TEXT_MODE:
@@ -223,7 +222,7 @@ public:
                 nextState(SMS_BEGIN, 20000, CONFIGURE_TEXT_MODE, "OK");
                 break;
             case CONFIGURE_TEXT_MODE_TIMEOUT:
-                setPower(false);
+                setPower(0);
                 nextState(END_FAILED, 1000);
                 break;
             case SMS_BEGIN:
@@ -241,11 +240,11 @@ public:
                 nextState(POWER_OFF, 120000, SMS_END_TIMEOUT, "+CMGS");
                 break;
             case SMS_END_TIMEOUT:
-                setPower(false);
+                setPower(0);
                 nextState(END_FAILED, 1000);
                 break;
             case POWER_OFF:
-                setPower(false);
+                setPower(0);
                 nextState(END_SUCCESS, 2000);
                 break;
             case END_SUCCESS:
