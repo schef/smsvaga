@@ -65,7 +65,28 @@ class ConsoleTest {
                 Modem::getInstance().sendSms("+385912895203", "DELA!!!", onSms);
 
             } else if (!strcmp(argv[1], "state")) {
-                    Modem::getInstance().printState();
+                Modem::getInstance().printState();
+
+            } else if (!strcmp(argv[1], "at")) {
+                Modem::getInstance().write("AT");
+
+            } else if (!strcmp(argv[1], "n")) {
+                Modem::getInstance().write(NULL, "\n");
+
+            } else if (!strcmp(argv[1], "r")) {
+                Modem::getInstance().write(NULL, "\r");
+
+            } else if (!strcmp(argv[1], "rn")) {
+                Modem::getInstance().write(NULL, "\r\n");
+
+            } else if (!strcmp(argv[1], "ctrlz")) {
+                Modem::getInstance().write(26, '\0');
+
+            } else if (!strcmp(argv[1], "esc")) {
+                Modem::getInstance().write(0x1b, '\0');
+
+            } else if (!strcmp(argv[1], "startsms")) {
+                Modem::getInstance().write("AT+CMGS=\"+385912895203\"");
 
             } else {
                 Console::printError(argc, argv);
@@ -85,14 +106,18 @@ class ConsoleTest {
                 Modem::getInstance().write(argv[2]);
 
             } else if (!strcmp(argv[1], "writen")) {
-                Modem::getInstance().write(argv[2], false);
+                Modem::getInstance().write(argv[2], "\n");
 
-            } else if (!strcmp(argv[1], "writesms")) {
-                if (!strcmp(argv[2], "start")) {
-                    Modem::getInstance().write("AT+CMGS=\"+385912895203\"");
-                } else if (!strcmp(argv[2], "end")) {
-                    Modem::getInstance().write(26, false);
-                }
+            } else if (!strcmp(argv[1], "writer")) {
+                Modem::getInstance().write(argv[2], "\r");
+
+            } else if (!strcmp(argv[1], "writern")) {
+                Modem::getInstance().write(argv[2], "\r\n");
+
+            } else if (!strcmp(argv[1], "w")) {
+                Modem::getInstance().write(argv[2], NULL);
+
+
 
             } else {
                 Console::printError(argc, argv);

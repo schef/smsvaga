@@ -88,7 +88,7 @@ void setup() {
     Modem::getInstance();
     Vaga::getInstance();
 
-    Modem::getInstance().setPower(1);
+    Modem::getInstance().setPower(0);
 
     AppTimer::getInstance().registerCallback("keepAliveMessage", 60000L, keepAliveMessage);
     AppTimer::getInstance().registerCallback("watchDogFeed", 1000L, watchDogFeed);

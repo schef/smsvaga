@@ -61,28 +61,23 @@ public:
 
     void setPower(bool state) {
         loggif("state[%d]\n", state);
-        if (state) {
-            digitalWrite(17, !state);
-        } else {
-            loggif("ignore power off couse off fw reset, low voltage?\n");
-        }
+        digitalWrite(17, !state);
     }
 
     void read() {
         if (Serial1.available()) {
-            rxBuffer[rxBufferLen] = Serial1.read();
-            rxBufferLen++;
-            if (rxBuffer[rxBufferLen - 2] == 0x0D && rxBuffer[rxBufferLen - 1] == 0x0A) {
-                for (uint32_t i = 0; i < rxBufferLen; i++) {
-                    uint8_t &c = rxBuffer[i];
-                    if (c == 0x0D || c == 0x0A) {
-                        c = 0;
-                    }
-                }
-                if (rxBuffer[0] != 0) {
-                    onRead((const char *) rxBuffer);
-                }
+            char rx = Serial1.read();
+            if (rxBufferLen == 0 && (rx == '\r' || rx == '\n' || rx < 0x20 || rx > 0x7e)) {
+                loggif("RX[%02X][%c]\n", rx, (rx < 0x20 || rx > 0x7e) ? '#' : rx);
+            } else if (rxBufferLen != 0 && (rx == '\r' || rx == '\n')) {
+                loggif("RX[%02X][%c]\n", rx, (rx < 0x20 || rx > 0x7e) ? '#' : rx);
+                rxBuffer[rxBufferLen] = '\0';
+                onRead((const char *) rxBuffer);
                 rxBufferLen = 0;
+            } else {
+                loggif("RX[%02X][%c]\n", rx, (rx < 0x20 || rx > 0x7e) ? ' ' : rx);
+                rxBuffer[rxBufferLen] = rx;
+                rxBufferLen++;
             }
         }
     }
@@ -94,19 +89,23 @@ public:
         }
     }
 
-    void write(const char *message, bool newLine = true) {
+    void write(const char *message, const char *end = "\n") {
         while (!Serial1.availableForWrite());
-        Serial1.write(message);
-        if (newLine) {
-            Serial1.write("\n");
+        if (message) {
+            Serial1.write(message);
+        }
+        if (end) {
+            Serial1.write(end);
         }
     }
 
-    void write(uint8_t num, bool newLine = true) {
+    void write(uint8_t num, char end = '\n') {
         while (!Serial1.availableForWrite());
-        Serial1.write(num);
-        if (newLine) {
-            Serial1.write("\n");
+        if (num) {
+            Serial1.write(num);
+        }
+        if (end) {
+            Serial1.write(end);
         }
     }
 
@@ -228,17 +227,17 @@ public:
                 nextState(END_FAILED, 1000);
                 break;
             case SMS_BEGIN:
-                write("AT+CMGS=\"", false);
-                write(smsNumber, false);
+                write("AT+CMGS=\"");
+                write(smsNumber);
                 write("\"");
                 nextState(SMS_TEXT, 1000);
                 break;
             case SMS_TEXT:
-                write(smsMessage, false);
+                write(smsMessage);
                 nextState(SMS_END, 1000);
                 break;
             case SMS_END:
-                write(26, false);
+                write(26, '\0');
                 nextState(POWER_OFF, 120000, SMS_END_TIMEOUT, "+CMGS");
                 break;
             case SMS_END_TIMEOUT:
