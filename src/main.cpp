@@ -34,8 +34,11 @@ static const uint32_t retryCountMax = 3;
 void onSms(bool status);
 
 void sendSms() {
+    loggif("\n");
     static char buffer[256];
-    snprintf(buffer, sizeof(buffer), "Stanje vage %sg\n", f2str(Vaga::getInstance().read()));
+//    snprintf(buffer, sizeof(buffer), "Stanje vage %sg\n", f2str(Vaga::getInstance().read()));
+    snprintf(buffer, (sizeof(buffer)), "uptime[%lus]\n", (uint32_t)(AppTimer::getInstance().getMillis() / 1000));
+    loggif("%s\n", buffer);
     Modem::getInstance().sendSms(TELEFON, buffer, onSms);
 }
 
@@ -57,6 +60,7 @@ void onSms(bool status) {
 void testTimer() {
     static uint64_t timestamp = AppTimer::getInstance().getMillis();
     static bool firstTime = true;
+//    static uint64_t timeoutFirst = 20L * 1000L;
     static uint64_t timeoutFirst = 10L * 60L * 1000L;
     static uint64_t timeoutNext = 24L * 60L * 60L * 1000L;
     if (firstTime && AppTimer::getInstance().millisPassed(timestamp) >= timeoutFirst) {
@@ -87,8 +91,6 @@ void setup() {
     ConsoleTest::registerCommands();
     Modem::getInstance();
     Vaga::getInstance();
-
-    Modem::getInstance().setPower(0);
 
     AppTimer::getInstance().registerCallback("keepAliveMessage", 60000L, keepAliveMessage);
     AppTimer::getInstance().registerCallback("watchDogFeed", 1000L, watchDogFeed);
